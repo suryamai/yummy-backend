@@ -1,50 +1,78 @@
-# 📋 Yummy Backend - Complete API Reference & Endpoints Catalog
+# 📋 YumQuick v3 - Complete API Reference & Endpoints Catalog (56 Endpoints)
 
-This document lists **every route and endpoint** available in the `yummy-backend` API.
+This is the comprehensive master reference for all **56 endpoints** implemented in the **YumQuick v3 Backend** (FastAPI + Supabase PostgreSQL).
 
 **Base URLs**:
-
-- **Local Browser / Postman**: `http://127.0.0.1:8000`
-- **Android Emulator**: `http://10.0.2.2:8000`
-- **iOS Simulator**: `http://localhost:8000`
-- **Physical Mobile Device (Wi-Fi)**: `http://192.168.1.11:8000`
+- **Local Development**: `http://127.0.0.1:8000`
+- **Render Cloud Production**: `https://yummy-backend-igrf.onrender.com`
+- **Local Wi-Fi Mobile Testing**: `http://192.168.1.11:8000`
 
 ---
 
 ## 📌 Master Route Table
 
-| #   | Method   | Endpoint                    | Category       | Description                                         |
-| :-- | :------- | :-------------------------- | :------------- | :-------------------------------------------------- |
-| 1   | `GET`    | `/`                         | System         | Health check & system status                        |
-| 2   | `GET`    | `/docs`                     | Docs           | Interactive Swagger UI documentation                |
-| 3   | `GET`    | `/redoc`                    | Docs           | ReDoc UI documentation                              |
-| 4   | `GET`    | `/openapi.json`             | Docs           | Raw OpenAPI specification JSON                      |
-| 5   | `POST`   | `/auth/signup`              | Authentication | Register new user account                           |
-| 6   | `POST`   | `/auth/login`               | Authentication | Login with email or phone + password                |
-| 7   | `GET`    | `/auth/users`               | Authentication | View all registered users (Admin / Inspection)      |
-| 8   | `GET`    | `/admin/overview`           | Admin          | Real-time counts of users, dishes, orders & revenue |
-| 9   | `GET`    | `/menu/categories`          | Menu           | Get list of all distinct food categories            |
-| 8   | `GET`    | `/menu/stats`               | Menu           | Get total dish count & category breakdown           |
-| 9   | `GET`    | `/menu`                     | Menu           | Get dishes (supports category, search, pagination)  |
-| 10  | `GET`    | `/menu/{item_id}`           | Menu           | Get single dish details by its ID                   |
-| 11  | `POST`   | `/menu`                     | Menu (Admin)   | Add a new dish to the database                      |
-| 12  | `PATCH`  | `/menu/{item_id}`           | Menu (Admin)   | Update price, availability, or details              |
-| 13  | `DELETE` | `/menu/{item_id}`           | Menu (Admin)   | Delete a dish from the database                     |
-| 14  | `POST`   | `/orders`                   | Orders         | Place a new food order                              |
-| 15  | `GET`    | `/orders`                   | Orders         | View all placed orders with dish details            |
-| 16  | `PATCH`  | `/orders/{order_id}/status` | Orders         | Update status (received, preparing, delivered)      |
+| # | Method | Endpoint | Category | Description |
+|:--|:-------|:---------|:---------|:------------|
+| 1 | `GET` | `/` | System | Health check & system status |
+| 2 | `GET` | `/docs` | Docs | Interactive Swagger UI documentation |
+| 3 | `GET` | `/redoc` | Docs | ReDoc UI documentation |
+| 4 | `POST` | `/auth/signup` | Auth (P0) | Register new user + JWT access/refresh tokens |
+| 5 | `POST` | `/auth/login` | Auth (P0) | Login via email/phone + JWT access/refresh tokens |
+| 6 | `POST` | `/auth/refresh` | Auth (P0) | Issue fresh access token using refresh token |
+| 7 | `POST` | `/auth/logout` | Auth (P0) | Invalidate user session tokens |
+| 8 | `POST` | `/auth/forgot-password` | Auth (P1) | Send 4-digit verification OTP to email/mobile |
+| 9 | `POST` | `/auth/verify-otp` | Auth (P1) | Verify OTP and return reset token |
+| 10 | `POST` | `/auth/reset-password` | Auth (P1) | Set new password with reset token |
+| 11 | `POST` | `/auth/change-password` | Auth (P1) | Change password while logged in |
+| 12 | `GET` | `/auth/users` | Admin | View all registered user profiles |
+| 13 | `GET` | `/users/me` | Profile (P0) | Get authenticated user profile |
+| 14 | `PATCH` | `/users/me` | Profile (P0) | Update name, mobile, DOB, avatar |
+| 15 | `DELETE` | `/users/me` | Profile (P1) | Delete account permanently |
+| 16 | `GET` | `/location/reverse-geocode` | Location (P0) | Convert lat/lng to formatted address |
+| 17 | `GET` | `/location/autocomplete` | Location (P0) | Search address suggestions as user types |
+| 18 | `GET` | `/location/serviceability` | Location (P0) | Check if lat/lng is deliverable + ETA & fee |
+| 19 | `GET` | `/addresses` | Address (P0) | List user's saved delivery addresses |
+| 20 | `POST` | `/addresses` | Address (P0) | Add new address (house, street, lat, lng, contact) |
+| 21 | `PATCH` | `/addresses/{id}` | Address (P0) | Edit address or set as default |
+| 22 | `DELETE` | `/addresses/{id}` | Address (P0) | Delete an address |
+| 23 | `GET` | `/restaurants` | Restaurant (P0) | List nearby restaurants with distance, fee & ETA |
+| 24 | `GET` | `/restaurants/{id}` | Restaurant (P0) | Restaurant details + menu grouped by category |
+| 25 | `GET` | `/restaurants/{id}/menu` | Restaurant (P0) | Get dishes belonging to a restaurant |
+| 26 | `GET` | `/menu` | Menu (P0) | Search/filter dishes (category, restaurant, veg, sort) |
+| 27 | `GET` | `/menu/{id}` | Menu (P0) | Get single dish details by ID |
+| 28 | `POST` | `/menu` | Menu (Admin) | Add a new dish to the catalog |
+| 29 | `PATCH` | `/menu/{id}` | Menu (Admin) | Update price, availability, or dish details |
+| 30 | `DELETE` | `/menu/{id}` | Menu (Admin) | Delete a dish |
+| 31 | `GET` | `/menu/categories` | Menu | List all distinct food categories |
+| 32 | `GET` | `/menu/stats` | Menu | Total dishes count & category breakdown |
+| 33 | `POST` | `/cart/quote` | Cart (P0) | Server bill calculation (subtotal, fee, GST, promo, total in ₹) |
+| 34 | `POST` | `/promos/validate` | Cart (P1) | Validate discount coupon code |
+| 35 | `POST` | `/orders` | Orders (P0) | Place multi-item order with sizes, notes & address |
+| 36 | `GET` | `/orders` | Orders (P0) | List user orders with `?status=active` or `?status=past` |
+| 37 | `GET` | `/orders/{id}` | Orders (P0) | Get single order details with all line items |
+| 38 | `GET` | `/orders/{id}/track` | Orders (P0) | Live order tracking with driver position, ETA & steps |
+| 39 | `POST` | `/orders/{id}/cancel` | Orders (P0) | Cancel order before cooking starts |
+| 40 | `POST` | `/orders/{id}/reorder` | Orders (P1) | Re-populate cart from past order |
+| 41 | `PATCH` | `/orders/{id}/status` | Orders (Admin) | Update order status (received, preparing, out_for_delivery, delivered) |
+| 42 | `GET` | `/home` | Discovery (P2) | Aggregated Home feed (banners, categories, popular, nearby) |
+| 43 | `GET` | `/banners` | Discovery (P1) | Offer carousel banners for Home screen |
+| 44 | `GET` | `/search/suggestions` | Discovery (P1) | Live autocomplete for dishes and restaurants |
+| 45 | `GET` | `/search/popular` | Discovery (P1) | Trending search keywords |
+| 46 | `GET` | `/favorites` | Favorites (P1) | List user's favorite dishes and restaurants |
+| 47 | `POST` | `/favorites` | Favorites (P1) | Add dish or restaurant to favorites |
+| 48 | `DELETE` | `/favorites/{id}` | Favorites (P1) | Remove from favorites |
+| 49 | `GET` | `/notifications` | Notifications (P1) | List user notifications |
+| 50 | `PATCH` | `/notifications/{id}/read`| Notifications (P1) | Mark a single notification as read |
+| 51 | `POST` | `/notifications/read-all`| Notifications (P1) | Mark all notifications as read |
+| 52 | `POST` | `/reviews` | Reviews (P1) | Submit rating & review for food or restaurant |
+| 53 | `GET` | `/restaurants/{id}/reviews`| Reviews (P1) | Read reviews for a restaurant |
+| 54 | `GET` | `/admin/overview` | Admin | Real-time counts of users, restaurants, orders & revenue |
 
 ---
 
-## 🔐 1. Authentication Endpoints
+## 🔐 1. Authentication & Profile Samples
 
-### 1.1 User Signup
-
-- **URL**: `POST /auth/signup`
-- **Status Code**: `201 Created`
-- **Description**: Registers a new user. Checks for duplicate emails or phone numbers. Hashes password with bcrypt.
-- **Request Body**:
-
+### 1.1 Signup (`POST /auth/signup`)
 ```json
 {
   "fullName": "Jayasurya M",
@@ -54,30 +82,9 @@ This document lists **every route and endpoint** available in the `yummy-backend
   "dob": "2000-05-15"
 }
 ```
+**Returns**: `access_token`, `refresh_token`, and user profile.
 
-- **Response**:
-
-```json
-{
-  "id": 1,
-  "fullName": "Jayasurya M",
-  "email": "jaya@example.com",
-  "mobile": "9876543210",
-  "dob": "2000-05-15"
-}
-```
-
-- **Errors**: `400 Bad Request` if email or mobile is already registered.
-
----
-
-### 1.2 User Login
-
-- **URL**: `POST /auth/login`
-- **Status Code**: `200 OK`
-- **Description**: Authenticates user using **either** email OR mobile/phone number, plus password.
-- **Request Body (Option A - with Email)**:
-
+### 1.2 Login (`POST /auth/login`)
 ```json
 {
   "email": "jaya@example.com",
@@ -85,243 +92,115 @@ This document lists **every route and endpoint** available in the `yummy-backend
 }
 ```
 
-- **Request Body (Option B - with Phone)**:
+---
 
+## 📍 2. Location & Address Samples
+
+### 2.1 Serviceability Check (`GET /location/serviceability?lat=12.9716&lng=77.5946`)
+**Returns**:
 ```json
 {
-  "phone": "9876543210",
-  "password": "Password123!"
+  "serviceable": true,
+  "city": "Bengaluru",
+  "delivery_fee": 25.0,
+  "estimated_time_mins": 25,
+  "message": "Delivering delicious food to your area!"
 }
 ```
 
-- **Response**:
-
+### 2.2 Add Address (`POST /addresses`)
+*Header: `Authorization: Bearer <access_token>`*
 ```json
 {
-  "message": "Welcome back, Jayasurya M! Login successful. 🎉",
-  "user": {
-    "id": 1,
-    "fullName": "Jayasurya M",
-    "email": "jaya@example.com",
-    "mobile": "9876543210",
-    "dob": "2000-05-15"
-  }
-}
-```
-
-- **Errors**: `401 Unauthorized` if invalid credentials.
-
----
-
-## 🍛 2. Menu Endpoints (540+ Dishes)
-
-### 2.1 Get All Categories
-
-- **URL**: `GET /menu/categories`
-- **Status Code**: `200 OK`
-- **Description**: Returns all unique category names (ideal for tabs/chips in mobile app).
-- **Response**:
-
-```json
-[
-  "South Indian",
-  "North Indian",
-  "Biryani & Rice",
-  "Tandoor & Starters",
-  "Street Food & Chaat",
-  "Breads & Roti",
-  "Sweets & Desserts",
-  "Beverages & Drinks",
-  "Indo-Chinese",
-  "Regional Specials"
-]
-```
-
----
-
-### 2.2 Get Menu Statistics
-
-- **URL**: `GET /menu/stats`
-- **Status Code**: `200 OK`
-- **Response**:
-
-```json
-{
-  "total_items": 540,
-  "categories": {
-    "South Indian": 110,
-    "North Indian": 60,
-    "Street Food & Chaat": 60,
-    "Biryani & Rice": 50,
-    "Tandoor & Starters": 50,
-    "Sweets & Desserts": 50,
-    "Beverages & Drinks": 50,
-    "Indo-Chinese": 38,
-    "Regional Specials": 37,
-    "Breads & Roti": 35
-  }
+  "label": "Home",
+  "lat": 12.9784,
+  "lng": 77.6408,
+  "house": "Flat 301, Emerald Apts",
+  "street": "100 Feet Road, Indiranagar",
+  "landmark": "Opposite Toit",
+  "city": "Bengaluru",
+  "pincode": "560038",
+  "contact": "9876543210",
+  "is_default": true
 }
 ```
 
 ---
 
-### 2.3 Get Dishes (Search, Filter & Pagination)
+## 🍛 3. Restaurants & Discovery Samples
 
-- **URL**: `GET /menu`
-- **Status Code**: `200 OK`
-- **Query Parameters**:
-  - `category`: Filter by category name (e.g. `?category=South Indian`)
-  - `search`: Search keyword matching name or description (e.g. `?search=biryani`)
-  - `limit`: Number of items to return (default: `50`)
-  - `offset`: Starting index for pagination (default: `0`)
-- **Example**: `/menu?category=Biryani%20%26%20Rice&limit=10`
-- **Response**:
+### 3.1 Nearby Restaurants (`GET /restaurants?lat=12.9716&lng=77.5946&sort_by=rating`)
+**Returns**: List of restaurants with computed `distance_km`, `delivery_time_mins`, ratings, cuisines, and cover photos.
 
-```json
-[
-  {
-    "id": 1,
-    "name": "Steamed Idli (2 pcs)",
-    "description": "Soft, fluffy steamed rice cakes served with coconut chutney & sambar",
-    "price": 40.0,
-    "category": "South Indian",
-    "image_url": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop",
-    "is_available": true
-  }
-]
-```
+### 3.2 Aggregated Home Screen Feed (`GET /home?lat=12.9716&lng=77.5946`)
+**Returns**: Promo banners, top categories, popular dishes, and nearby restaurants in a single ultra-fast network call!
 
 ---
 
-### 2.4 Get Single Dish by ID
+## 🛒 4. Cart Quote & Multi-Item Order Samples
 
-- **URL**: `GET /menu/{item_id}`
-- **Status Code**: `200 OK`
-- **Example**: `GET /menu/61`
-- **Response**:
-
+### 4.1 Server Bill Calculation (`POST /cart/quote`)
 ```json
 {
-  "id": 61,
-  "name": "Chettinad Chicken Curry",
-  "description": "Fiery Tamil Nadu chicken curry cooked with freshly roasted 14 whole spices",
-  "price": 240.0,
-  "category": "South Indian",
-  "image_url": "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&auto=format&fit=crop",
-  "is_available": true
+  "restaurant_id": 1,
+  "lat": 12.9716,
+  "lng": 77.5946,
+  "promo_code": "WELCOME50",
+  "items": [
+    { "item_id": 1, "quantity": 2, "size": "Regular" },
+    { "item_id": 10, "quantity": 1, "size": "Regular" }
+  ]
+}
+```
+**Returns**:
+```json
+{
+  "subtotal": 150.0,
+  "discount": 75.0,
+  "delivery_fee": 20.0,
+  "tax": 7.5,
+  "total": 102.5,
+  "currency": "₹",
+  "promo_applied": "WELCOME50",
+  "promo_message": "50% OFF applied (up to ₹100)",
+  "estimated_time_mins": 30,
+  "items_count": 3
 }
 ```
 
-- **Errors**: `404 Not Found` if `item_id` does not exist.
-
----
-
-### 2.5 Add New Dish (Admin)
-
-- **URL**: `POST /menu`
-- **Status Code**: `201 Created`
-- **Request Body**:
-
+### 4.2 Place Multi-Item Order (`POST /orders`)
 ```json
 {
-  "name": "Paneer Butter Masala Special",
-  "description": "Rich cottage cheese in cashew butter sauce",
-  "price": 250.0,
-  "category": "North Indian",
-  "image_url": "https://images.unsplash.com/photo-1631452180519-c014fe946bc7",
-  "is_available": true
+  "restaurant_id": 1,
+  "address_id": 1,
+  "delivery_address_text": "Flat 301, Emerald Apts, Indiranagar",
+  "payment_method": "UPI",
+  "promo_code": "WELCOME50",
+  "delivery_notes": "Please leave at door and don't ring bell",
+  "items": [
+    { "item_id": 1, "quantity": 2, "size": "Regular" },
+    { "item_id": 10, "quantity": 1, "size": "Regular" }
+  ]
 }
 ```
 
----
-
-### 2.6 Partially Update Dish (Admin)
-
-- **URL**: `PATCH /menu/{item_id}`
-- **Status Code**: `200 OK`
-- **Description**: Update only the fields you send (e.g. price change or mark out of stock).
-- **Request Body**:
-
+### 4.3 Live Order Tracking (`GET /orders/{id}/track`)
+**Returns**:
 ```json
 {
-  "price": 260.0,
-  "is_available": false
+  "order_id": 1,
+  "order_number": "YUM-49210",
+  "status": "out_for_delivery",
+  "driver_name": "Rajesh Kumar",
+  "driver_phone": "+91 98765 43210",
+  "driver_lat": 12.9734,
+  "driver_lng": 77.6012,
+  "eta_mins": 14,
+  "steps": [
+    { "title": "Order Placed", "description": "We received your order", "done": true },
+    { "title": "Preparing", "description": "Chef is preparing fresh food", "done": true },
+    { "title": "Out for Delivery", "description": "Rajesh Kumar is on the way", "done": true },
+    { "title": "Delivered", "description": "Enjoy your delicious meal!", "done": false }
+  ]
 }
 ```
-
----
-
-### 2.7 Delete Dish (Admin)
-
-- **URL**: `DELETE /menu/{item_id}`
-- **Status Code**: `200 OK`
-- **Response**:
-
-```json
-{
-  "message": "'Dish Name' has been successfully deleted from the database."
-}
-```
-
----
-
-## 🛒 3. Order Management Endpoints
-
-### 3.1 Place a New Order
-
-- **URL**: `POST /orders`
-- **Status Code**: `201 Created`
-- **Request Body**:
-
-```json
-{
-  "customer_name": "Jayasurya M",
-  "item_id": 61,
-  "quantity": 2
-}
-```
-
-- **Validation Rules**:
-  - Checks if `item_id` exists (`404` if not found).
-  - Checks if dish `is_available` is `true` (`400` if out of stock).
-  - Automatically calculates `total_price = dish.price * quantity`.
-  - Sets initial status to `"received"`.
-- **Response**:
-
-```json
-{
-  "id": 1,
-  "customer_name": "Jayasurya M",
-  "quantity": 2,
-  "total_price": 480.0,
-  "status": "received",
-  "item_id": 61,
-  "item": {
-    "id": 61,
-    "name": "Chettinad Chicken Curry",
-    "description": "Fiery Tamil Nadu chicken curry cooked with freshly roasted 14 whole spices",
-    "price": 240.0,
-    "category": "South Indian",
-    "image_url": "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&auto=format&fit=crop",
-    "is_available": true
-  }
-}
-```
-
----
-
-### 3.2 View All Orders (Order History)
-
-- **URL**: `GET /orders`
-- **Status Code**: `200 OK`
-- **Response**: Array of all placed orders with nested dish information.
-
----
-
-### 3.3 Update Order Status
-
-- **URL**: `PATCH /orders/{order_id}/status?new_status=preparing`
-- **Status Code**: `200 OK`
-- **Query Parameter**:
-  - `new_status`: e.g. `"received"`, `"preparing"`, `"out_for_delivery"`, `"delivered"`
-- **Response**: Updated order object.
