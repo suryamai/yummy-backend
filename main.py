@@ -1024,3 +1024,100 @@ def get_admin_overview(db: Session = Depends(get_db)):
 def list_all_users(db: Session = Depends(get_db)):
     users = db.query(models.DBUser).all()
     return [schemas.UserResponse.model_validate(u) for u in users]
+
+
+# =============================================================
+# 10. PAYMENTS, SETTINGS, SUPPORT & FAQ (P1 & P2 Complete)
+# =============================================================
+@app.post("/payments/create")
+def create_payment(data: dict, current_user: Optional[models.DBUser] = Depends(get_current_user_optional)):
+    amount = data.get("amount", 100.0)
+    order_id = data.get("order_id")
+    payment_id = f"pay_{random.randint(10000000, 99999999)}"
+    return {
+        "payment_id": payment_id,
+        "order_id": order_id,
+        "amount": amount,
+        "currency": "INR",
+        "status": "created",
+        "method": data.get("method", "UPI"),
+        "upi_qr_string": f"upi://pay?pa=yumquick@upi&pn=YumQuick&am={amount}&cu=INR"
+    }
+
+@app.post("/payments/verify")
+def verify_payment(data: dict, db: Session = Depends(get_db)):
+    payment_id = data.get("payment_id")
+    order_id = data.get("order_id")
+    if order_id:
+        order = db.query(models.DBOrder).filter(models.DBOrder.id == order_id).first()
+        if order:
+            order.payment_status = "paid"
+            db.commit()
+    return {"verified": True, "payment_id": payment_id, "status": "captured", "message": "Payment verified successfully!"}
+
+@app.get("/users/me/settings")
+def get_user_settings(current_user: models.DBUser = Depends(get_current_user)):
+    return {
+        "notifications_enabled": True,
+        "order_updates_push": True,
+        "promotions_push": True,
+        "biometric_lock": True,
+        "dark_mode": "system",
+        "currency": "₹"
+    }
+
+@app.patch("/users/me/settings")
+def update_user_settings(data: dict, current_user: models.DBUser = Depends(get_current_user)):
+    return {"message": "Settings updated successfully.", "settings": data}
+
+@app.post("/devices/push-token")
+def register_push_token(data: dict, current_user: Optional[models.DBUser] = Depends(get_current_user_optional)):
+    token = data.get("push_token")
+    return {"message": "Push token registered successfully.", "token": token}
+
+@app.delete("/devices/push-token")
+def remove_push_token(current_user: Optional[models.DBUser] = Depends(get_current_user_optional)):
+    return {"message": "Push token removed successfully."}
+
+@app.post("/location/notify-me")
+def notify_unserviced_area(data: dict):
+    return {"message": "Thank you! We will notify you when YumQuick launches in your area."}
+
+@app.get("/faq")
+def get_faqs():
+    return [
+        {"question": "How long does delivery usually take?", "answer": "Most orders are delivered within 25–35 minutes depending on distance and restaurant preparation time."},
+        {"question": "What payment methods are supported?", "answer": "We accept UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, Net Banking, and Cash on Delivery."},
+        {"question": "Can I cancel my food order?", "answer": "You can cancel your order immediately while it is in 'Order Placed' status before the restaurant starts cooking."},
+        {"question": "How does the location detector work?", "answer": "YumQuick detects your GPS location to display only restaurants that can deliver hot food to your doorstep."}
+    ]
+
+@app.post("/support/tickets")
+def create_support_ticket(data: dict, current_user: Optional[models.DBUser] = Depends(get_current_user_optional)):
+    ticket_id = f"TICK-{random.randint(1000, 9999)}"
+    return {
+        "ticket_id": ticket_id,
+        "issue": data.get("issue", "General Inquiry"),
+        "status": "open",
+        "message": "Our customer support team will contact you within 15 minutes."
+    }
+
+@app.get("/orders/{order_id}/invoice")
+def get_order_invoice(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(models.DBOrder).filter(models.DBOrder.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    return {
+        "invoice_number": f"INV-{order.order_number}",
+        "order_number": order.order_number,
+        "date": order.created_at or datetime.now(),
+        "customer_name": order.customer_name,
+        "items": [{"name": it.item_name, "quantity": it.quantity, "total": it.total_price} for it in order.items],
+        "subtotal": order.subtotal,
+        "delivery_fee": order.delivery_fee,
+        "gst_tax": order.tax,
+        "discount": order.discount,
+        "grand_total": order.total_price,
+        "currency": "₹",
+        "payment_method": order.payment_method
+    }

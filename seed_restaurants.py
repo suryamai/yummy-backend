@@ -239,3 +239,4 @@ def seed_restaurants_and_banners():
 
 if __name__ == "__main__":
     seed_restaurants_and_banners()
+
