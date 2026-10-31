@@ -39,7 +39,7 @@ app.add_middleware(
 # -------------------------------------------------------------
 
 def hash_password(password: str) -> str:
-    salt = bcrypt.gensalt()
+    salt = bcrypt.gensalt()  
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -141,6 +141,35 @@ def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
             dob=user.dob
         )
     )
+
+# LIST ALL USERS: View all registered users (Admin / Inspection)
+@app.get("/auth/users", response_model=list[schemas.UserResponse])
+def get_all_users(db: Session = Depends(get_db)):
+    users = db.query(models.DBUser).all()
+    return [
+        schemas.UserResponse(
+            id=u.id,
+            fullName=u.full_name,
+            email=u.email,
+            mobile=u.mobile,
+            dob=u.dob
+        ) for u in users
+    ]
+
+# ADMIN OVERVIEW: Real-time dashboard of users, dishes, orders & revenue
+@app.get("/admin/overview")
+def get_admin_overview(db: Session = Depends(get_db)):
+    total_users = db.query(models.DBUser).count()
+    total_items = db.query(models.DBMenuItem).count()
+    total_orders = db.query(models.DBOrder).count()
+    total_revenue = db.query(func.sum(models.DBOrder.total_price)).scalar() or 0.0
+    return {
+        "status": "online",
+        "total_users_registered": total_users,
+        "total_menu_items": total_items,
+        "total_orders_placed": total_orders,
+        "total_revenue_inr": round(total_revenue, 2)
+    }
 
 # -------------------------------------------------------------
 # MENU ENDPOINTS (500+ Indian Dishes)

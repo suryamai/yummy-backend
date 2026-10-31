@@ -1,21 +1,29 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# 1. SQLite database URL (stored in a local file called yummy.db)
-SQLALCHEMY_DATABASE_URL = "sqlite:///./yummy.db"
+# 1. Fetch DATABASE_URL from environment variable (e.g. Supabase / PostgreSQL)
+# If not provided, fallback to local SQLite (yummy.db)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./yummy.db")
 
-# 2. Create the engine (connect_args is only needed for SQLite)
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# Supabase or cloud providers sometimes provide 'postgres://'
+# SQLAlchemy 1.4+ requires 'postgresql://'
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# 3. Create a session factory
+# SQLite requires check_same_thread=False; PostgreSQL does not
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
+# 2. Create engine
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+
+# 3. Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 4. Base class that our database models will inherit from
+# 4. Base class
 Base = declarative_base()
 
-# 5. Dependency to get DB session per-request and close it cleanly
+# 5. Dependency to get DB session per-request
 def get_db():
     db = SessionLocal()
     try:
