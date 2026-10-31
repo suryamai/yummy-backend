@@ -22,10 +22,13 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: int
     fullName: str
+    name: Optional[str] = None
     email: str
     mobile: str
+    phone: Optional[str] = None
     dob: str
     avatar_url: Optional[str] = None
+    photo_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -41,9 +44,20 @@ class RefreshTokenRequest(BaseModel):
 
 class UserUpdate(BaseModel):
     fullName: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
     mobile: Optional[str] = None
+    phone: Optional[str] = None
     dob: Optional[str] = None
     avatar_url: Optional[str] = None
+    avatarUrl: Optional[str] = None
+    photo: Optional[str] = None
+    photo_url: Optional[str] = None
+
+class AvatarUpdate(BaseModel):
+    avatar_url: Optional[str] = None
+    photo: Optional[str] = None
+    photo_url: Optional[str] = None
 
 class ForgotPasswordRequest(BaseModel):
     identifier: str = Field(..., description="Registered Email or Mobile")

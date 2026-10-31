@@ -25,9 +25,10 @@ This is the comprehensive master reference for all **56 endpoints** implemented 
 | 10 | `POST` | `/auth/reset-password` | Auth (P1) | Set new password with reset token |
 | 11 | `POST` | `/auth/change-password` | Auth (P1) | Change password while logged in |
 | 12 | `GET` | `/auth/users` | Admin | View all registered user profiles |
-| 13 | `GET` | `/users/me` | Profile (P0) | Get authenticated user profile |
-| 14 | `PATCH` | `/users/me` | Profile (P0) | Update name, mobile, DOB, avatar |
-| 15 | `DELETE` | `/users/me` | Profile (P1) | Delete account permanently |
+| 13 | `GET` | `/users/me` | Profile (P0) | Get authenticated user profile (name, email, phone, DOB, avatar) |
+| 14 | `PATCH` / `PUT` | `/users/me` | Profile (P0) | Update name, email, phone/mobile, DOB, photo/avatar URL |
+| 15 | `POST` | `/users/me/avatar` | Profile (P0) | Upload profile picture file (`multipart/form-data`) |
+| 16 | `DELETE` | `/users/me` | Profile (P1) | Delete account permanently |
 | 16 | `GET` | `/location/reverse-geocode` | Location (P0) | Convert lat/lng to formatted address |
 | 17 | `GET` | `/location/autocomplete` | Location (P0) | Search address suggestions as user types |
 | 18 | `GET` | `/location/serviceability` | Location (P0) | Check if lat/lng is deliverable + ETA & fee |

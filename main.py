@@ -1,13 +1,16 @@
 import os
 import math
 import random
+import uuid
+import shutil
 import bcrypt
 import jwt
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends, HTTPException, status, Query, Header
+from fastapi import FastAPI, Depends, HTTPException, status, Query, Header, File, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
@@ -32,6 +35,12 @@ app = FastAPI(
     description="Full-featured food delivery REST API supporting location, restaurants, multi-item cart, live tracking, and JWT auth.",
     version="3.0.0"
 )
+
+# -------------------------------------------------------------
+# Static Uploads directory & mounting
+# -------------------------------------------------------------
+os.makedirs("uploads/avatars", exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # -------------------------------------------------------------
 # CORS Middleware (Universal mobile & web access)
@@ -95,6 +104,19 @@ def get_current_user(
         )
     return user
 
+def build_user_response(user: models.DBUser) -> schemas.UserResponse:
+    return schemas.UserResponse(
+        id=user.id,
+        fullName=user.full_name,
+        name=user.full_name,
+        email=user.email,
+        mobile=user.mobile,
+        phone=user.mobile,
+        dob=user.dob,
+        avatar_url=user.avatar_url,
+        photo_url=user.avatar_url
+    )
+
 # -------------------------------------------------------------
 # Distance & Location Helpers
 # -------------------------------------------------------------
@@ -146,14 +168,7 @@ def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
     return schemas.TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        user=schemas.UserResponse(
-            id=new_user.id,
-            fullName=new_user.full_name,
-            email=new_user.email,
-            mobile=new_user.mobile,
-            dob=new_user.dob,
-            avatar_url=new_user.avatar_url
-        )
+        user=build_user_response(new_user)
     )
 
 @app.post("/auth/login", response_model=schemas.TokenResponse)
@@ -175,14 +190,7 @@ def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
     return schemas.TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token,
-        user=schemas.UserResponse(
-            id=user.id,
-            fullName=user.full_name,
-            email=user.email,
-            mobile=user.mobile,
-            dob=user.dob,
-            avatar_url=user.avatar_url
-        )
+        user=build_user_response(user)
     )
 
 @app.post("/auth/refresh")
@@ -288,40 +296,90 @@ def change_password(
 # =============================================================
 @app.get("/users/me", response_model=schemas.UserResponse)
 def get_my_profile(current_user: models.DBUser = Depends(get_current_user)):
-    return schemas.UserResponse(
-        id=current_user.id,
-        fullName=current_user.full_name,
-        email=current_user.email,
-        mobile=current_user.mobile,
-        dob=current_user.dob,
-        avatar_url=current_user.avatar_url
-    )
+    return build_user_response(current_user)
 
 @app.patch("/users/me", response_model=schemas.UserResponse)
+@app.put("/users/me", response_model=schemas.UserResponse)
 def update_my_profile(
     update_data: schemas.UserUpdate,
     current_user: models.DBUser = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if update_data.fullName is not None:
-        current_user.full_name = update_data.fullName
-    if update_data.mobile is not None:
-        current_user.mobile = update_data.mobile
+    # 1. Update Name (supports fullName or name)
+    new_name = update_data.fullName if update_data.fullName is not None else update_data.name
+    if new_name is not None:
+        clean_name = new_name.strip()
+        if clean_name:
+            current_user.full_name = clean_name
+
+    # 2. Update Email (validates uniqueness against other users)
+    if update_data.email is not None:
+        clean_email = str(update_data.email).strip().lower()
+        if clean_email and clean_email != current_user.email.lower():
+            conflict = db.query(models.DBUser).filter(
+                func.lower(models.DBUser.email) == clean_email,
+                models.DBUser.id != current_user.id
+            ).first()
+            if conflict:
+                raise HTTPException(status_code=400, detail="This email address is already in use by another account.")
+            current_user.email = clean_email
+
+    # 3. Update Phone/Mobile (supports mobile or phone, validates uniqueness)
+    new_mobile = update_data.mobile if update_data.mobile is not None else update_data.phone
+    if new_mobile is not None:
+        clean_mobile = str(new_mobile).strip()
+        if clean_mobile and clean_mobile != current_user.mobile:
+            conflict = db.query(models.DBUser).filter(
+                models.DBUser.mobile == clean_mobile,
+                models.DBUser.id != current_user.id
+            ).first()
+            if conflict:
+                raise HTTPException(status_code=400, detail="This phone number is already registered to another account.")
+            current_user.mobile = clean_mobile
+
+    # 4. Update DOB (YYYY-MM-DD)
     if update_data.dob is not None:
-        current_user.dob = update_data.dob
-    if update_data.avatar_url is not None:
-        current_user.avatar_url = update_data.avatar_url
+        clean_dob = str(update_data.dob).strip()
+        if clean_dob:
+            current_user.dob = clean_dob
+
+    # 5. Update Photo/Avatar URL (supports avatar_url, avatarUrl, photo, photo_url)
+    new_avatar = update_data.avatar_url or update_data.avatarUrl or update_data.photo or update_data.photo_url
+    if new_avatar is not None:
+        clean_avatar = str(new_avatar).strip()
+        if clean_avatar:
+            current_user.avatar_url = clean_avatar
 
     db.commit()
     db.refresh(current_user)
-    return schemas.UserResponse(
-        id=current_user.id,
-        fullName=current_user.full_name,
-        email=current_user.email,
-        mobile=current_user.mobile,
-        dob=current_user.dob,
-        avatar_url=current_user.avatar_url
-    )
+    return build_user_response(current_user)
+
+@app.post("/users/me/avatar", response_model=schemas.UserResponse)
+@app.post("/users/me/photo", response_model=schemas.UserResponse)
+async def upload_user_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: models.DBUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    avatar_dir = os.path.join("uploads", "avatars")
+    os.makedirs(avatar_dir, exist_ok=True)
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if not ext or ext not in [".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"]:
+        ext = ".jpg"
+
+    unique_filename = f"avatar_user_{current_user.id}_{int(datetime.now().timestamp())}_{uuid.uuid4().hex[:8]}{ext}"
+    filepath = os.path.join(avatar_dir, unique_filename)
+
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    base_url = str(request.base_url).rstrip("/")
+    current_user.avatar_url = f"{base_url}/uploads/avatars/{unique_filename}"
+    db.commit()
+    db.refresh(current_user)
+    return build_user_response(current_user)
 
 @app.delete("/users/me")
 def delete_my_account(current_user: models.DBUser = Depends(get_current_user), db: Session = Depends(get_db)):
