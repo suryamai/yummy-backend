@@ -10,12 +10,12 @@ load_dotenv()
 # If not provided, fallback to local SQLite (yummy.db)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./yummy.db")
 
-# Supabase or cloud providers sometimes provide 'postgres://' or 'postgresql://'
-# Ensure SQLAlchemy uses psycopg2 driver
+# Supabase or cloud providers provide 'postgres://' or 'postgresql://'
+# Ensure SQLAlchemy uses psycopg driver
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
 elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+"):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 # SQLite requires check_same_thread=False; PostgreSQL does not
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
